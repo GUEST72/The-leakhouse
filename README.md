@@ -11,10 +11,11 @@ city whose leaks we planted, and a pipeline that has to find them without lookin
 
 > All data in this repository is simulated. Nothing here is real utility data, and the system is not deployed.
 
-![The pipeline, animated](docs/images/pipeline-flow.gif)
+![One run of the pipeline, replayed stage by stage](docs/images/pipeline-flow.gif)
 
-For the interactive version (click any part, an 11-step tour, presentation mode), open
-[docs/pipeline-diagram.html](docs/pipeline-diagram.html) in a browser.
+The replay above follows one run: events split at Kafka, both paths meet in Iceberg, the answer key opens last, and
+each stage gets a check once Dagster has verified it. Open [docs/pipeline-replay.html](docs/pipeline-replay.html)
+for the live version, or [docs/pipeline-diagram.html](docs/pipeline-diagram.html) for a clickable tour of every component.
 
 ## How it works
 

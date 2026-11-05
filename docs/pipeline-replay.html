@@ -1,0 +1,288 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Leakhouse pipeline</title>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Geist',system-ui,sans-serif;background:#0b1f3a;color:#eef3fa;padding:36px 40px 26px}
+.frame{width:1600px;margin:0 auto}
+.eyebrow{font-family:'Geist Mono',monospace;font-size:12px;font-weight:500;letter-spacing:.18em;text-transform:uppercase;color:#8ea3bf;margin:0 0 8px 20px}
+h1{font-family:'Instrument Serif',serif;font-weight:400;font-size:46px;letter-spacing:-.02em;line-height:1.1;margin:0 0 6px 20px}
+svg{width:100%;min-width:1600px;display:block}
+.legend{display:flex;gap:34px;align-items:center;margin:6px 20px 0;padding-top:14px;border-top:1px solid rgba(238,243,250,0.18);font-family:'Geist Mono',monospace;font-size:12px;color:#8ea3bf}
+.legend .r{margin-left:auto} .l{display:inline-block;width:30px;height:0;border-top:1.5px solid #b4c4da;margin-right:10px;vertical-align:middle}
+.l.a{border-color:#6fc3ff} .l.d{border-top-style:dashed;border-color:#7f97b8}
+.hx{display:inline-block;width:12px;height:12px;background:#6fc3ff;clip-path:polygon(25% 5%,75% 5%,100% 50%,75% 95%,25% 95%,0 50%);margin-right:10px;vertical-align:middle}
+@media (prefers-reduced-motion: reduce){#dots{display:none}}
+</style></head><body><div class="frame">
+<p class="eyebrow">Architecture · the-leakhouse</p>
+<h1>One run, replayed stage by stage</h1>
+<svg id="dia" viewBox="0 40 1600 790" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="lh-title lh-desc">
+<title id="lh-title">The Leakhouse pipeline, replayed</title>
+<desc id="lh-desc">One run replayed: events flow from the generator through Kafka into four Flink jobs and the archive, meet in Iceberg, reach Trino and Power BI, and only then is the answer key opened for evaluation; Dagster marks each stage verified.</desc>
+<defs>
+<marker id="lh-main" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#b4c4da"/></marker>
+<marker id="lh-acc" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#6fc3ff"/></marker>
+<marker id="lh-dash" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#7f97b8"/></marker>
+</defs>
+<rect y="40" width="1600" height="790" fill="#0b1f3a"/>
+<rect x="20" y="84" width="1564" height="720" rx="10" fill="none" stroke="rgba(238,243,250,0.18)" stroke-width="1" stroke-dasharray="6,5"/>
+<rect x="36" y="77" width="420" height="14" rx="2" fill="#0b1f3a"/>
+<text x="44" y="88" font-family="Geist Mono, ui-monospace, monospace" font-size="10" font-weight="500" letter-spacing="0.16em" fill="#8ea3bf">DAGSTER · ORCHESTRATES AND PROVES EVERY STAGE</text>
+<rect x="1240" y="77" width="332" height="14" rx="2" fill="#0b1f3a"/>
+<text id="count" x="1564" y="88" text-anchor="end" font-family="Geist Mono, ui-monospace, monospace" font-size="10.5" font-weight="500" letter-spacing="0.1em" fill="#6fc3ff">0 EVENTS</text>
+<rect x="424" y="146" width="604" height="112" rx="8" fill="rgba(238,243,250,0.03)" stroke="rgba(238,243,250,0.18)" stroke-width="0.9"/>
+<rect x="436" y="139" width="214" height="14" rx="2" fill="#0b1f3a"/>
+<text x="442" y="149.5" font-family="Geist Mono, ui-monospace, monospace" font-size="9.5" font-weight="500" letter-spacing="0.16em" fill="#8ea3bf">STREAMING · FOUR FLINK JOBS</text><rect x="424" y="476" width="588" height="112" rx="8" fill="rgba(238,243,250,0.03)" stroke="rgba(238,243,250,0.18)" stroke-width="0.9"/>
+<rect x="436" y="469" width="62" height="14" rx="2" fill="#0b1f3a"/>
+<text x="442" y="479.5" font-family="Geist Mono, ui-monospace, monospace" font-size="9.5" font-weight="500" letter-spacing="0.16em" fill="#8ea3bf">BATCH</text><rect x="1032" y="666" width="396" height="112" rx="8" fill="rgba(238,243,250,0.03)" stroke="rgba(238,243,250,0.18)" stroke-width="0.9"/>
+<rect x="1044" y="659" width="92" height="14" rx="2" fill="#0b1f3a"/>
+<text x="1050" y="669.5" font-family="Geist Mono, ui-monospace, monospace" font-size="9.5" font-weight="500" letter-spacing="0.16em" fill="#8ea3bf">EVALUATION</text>
+<path id="e-gen-kafka" class="edge" data-kind="main" d="M200,392 H236" fill="none" stroke="#b4c4da" stroke-width="1.2" marker-end="url(#lh-main)" opacity="0.3"/>
+<path id="e-kafka-val" class="edge" data-kind="main" d="M392,376 H408 Q416,376 416,368 V210 Q416,202 424,202 H440" fill="none" stroke="#b4c4da" stroke-width="1.2" marker-end="url(#lh-main)" opacity="0.3"/>
+<path id="e-kafka-arch" class="edge" data-kind="main" d="M392,408 H408 Q416,408 416,416 V524 Q416,532 424,532 H440" fill="none" stroke="#b4c4da" stroke-width="1.2" marker-end="url(#lh-main)" opacity="0.3"/>
+<path id="e-val-feat" class="edge" data-kind="main" d="M568,202 H588" fill="none" stroke="#b4c4da" stroke-width="1.2" marker-end="url(#lh-main)" opacity="0.3"/>
+<path id="e-feat-alert" class="edge" data-kind="main" d="M716,202 H736" fill="none" stroke="#b4c4da" stroke-width="1.2" marker-end="url(#lh-main)" opacity="0.3"/>
+<path id="e-alert-shift" class="edge" data-kind="main" d="M864,202 H884" fill="none" stroke="#b4c4da" stroke-width="1.2" marker-end="url(#lh-main)" opacity="0.3"/>
+<path id="e-shift-der" class="edge" data-kind="main" d="M1012,202 H1048" fill="none" stroke="#b4c4da" stroke-width="1.2" marker-end="url(#lh-main)" opacity="0.3"/>
+<path id="e-der-bridge" class="edge" data-kind="main" d="M1196,202 H1232" fill="none" stroke="#b4c4da" stroke-width="1.2" marker-end="url(#lh-main)" opacity="0.3"/>
+<path id="e-bridge-graf" class="edge" data-kind="main" d="M1388,202 H1424" fill="none" stroke="#b4c4da" stroke-width="1.2" marker-end="url(#lh-main)" opacity="0.3"/>
+<path id="e-arch-minio" class="edge" data-kind="main" d="M584,532 H620" fill="none" stroke="#b4c4da" stroke-width="1.2" marker-end="url(#lh-main)" opacity="0.3"/>
+<path id="e-minio-spark" class="edge" data-kind="main" d="M788,532 H824" fill="none" stroke="#b4c4da" stroke-width="1.2" marker-end="url(#lh-main)" opacity="0.3"/>
+<path id="e-der-load" class="edge" data-kind="main" d="M1122,234 V360" fill="none" stroke="#b4c4da" stroke-width="1.2" marker-end="url(#lh-main)" opacity="0.3"/>
+<path id="e-load-ice" class="edge" data-kind="acc" d="M1196,392 H1232" fill="none" stroke="#6fc3ff" stroke-width="1.6" marker-end="url(#lh-acc)" opacity="0.3"/>
+<path id="e-spark-ice" class="edge" data-kind="acc" d="M996,532 H1276 Q1284,532 1284,524 V424" fill="none" stroke="#6fc3ff" stroke-width="1.6" marker-end="url(#lh-acc)" opacity="0.3"/>
+<path id="e-ice-trino" class="edge" data-kind="acc" d="M1412,392 H1448" fill="none" stroke="#6fc3ff" stroke-width="1.6" marker-end="url(#lh-acc)" opacity="0.3"/>
+<path id="e-trino-pbi" class="edge" data-kind="main" d="M1504,424 V500" fill="none" stroke="#b4c4da" stroke-width="1.2" marker-end="url(#lh-main)" opacity="0.3"/>
+<path id="e-raw-spark" class="edge" data-kind="main" d="M816,722 H900 Q908,722 908,714 V564" fill="none" stroke="#b4c4da" stroke-width="1.2" marker-end="url(#lh-main)" opacity="0.3"/>
+<path id="e-key-eval" class="edge" data-kind="dash" d="M1196,722 H1232" fill="none" stroke="#7f97b8" stroke-width="1.2" stroke-dasharray="5,4" marker-end="url(#lh-dash)" opacity="0.3"/>
+<path id="e-eval-ice" class="edge" data-kind="dash" d="M1340,690 V424" fill="none" stroke="#7f97b8" stroke-width="1.2" stroke-dasharray="5,4" marker-end="url(#lh-dash)" opacity="0.3"/>
+<path id="e-gen-raw" class="edge" data-kind="dash" d="M150,424 V714 Q150,722 158,722 H620" fill="none" stroke="#7f97b8" stroke-width="1.2" stroke-dasharray="5,4" marker-end="url(#lh-dash)" opacity="0.3"/>
+<path id="e-gen-key" class="edge" data-kind="dash" d="M90,424 V770 Q90,778 98,778 H1114 Q1122,778 1122,770 V754" fill="none" stroke="#7f97b8" stroke-width="1.2" stroke-dasharray="5,4" marker-end="url(#lh-dash)" opacity="0.3"/>
+<g id="dots"></g>
+<rect x="381" y="281" width="71" height="16" rx="2" fill="#0b1f3a"/>
+<text x="416" y="293" text-anchor="middle" font-family="Geist Mono, ui-monospace, monospace" font-size="9.2" letter-spacing="0.06em" fill="#b4c4da">DISTRICTS</text><rect x="374" y="435" width="83" height="16" rx="2" fill="#0b1f3a"/>
+<text x="416" y="447" text-anchor="middle" font-family="Geist Mono, ui-monospace, monospace" font-size="9.2" letter-spacing="0.06em" fill="#b4c4da">BOTH TOPICS</text><rect x="1093" y="291" width="58" height="16" rx="2" fill="#0b1f3a"/>
+<text x="1122" y="303" text-anchor="middle" font-family="Geist Mono, ui-monospace, monospace" font-size="9.2" letter-spacing="0.06em" fill="#b4c4da">BOUNDED</text><rect x="917" y="631" width="71" height="16" rx="2" fill="#0b1f3a"/>
+<text x="952" y="643" text-anchor="middle" font-family="Geist Mono, ui-monospace, monospace" font-size="9.2" letter-spacing="0.06em" fill="#b4c4da">REFERENCE</text><rect x="1354" y="631" width="52" height="16" rx="2" fill="#0b1f3a"/>
+<text x="1380" y="643" text-anchor="middle" font-family="Geist Mono, ui-monospace, monospace" font-size="9.2" letter-spacing="0.06em" fill="#b4c4da">SCORES</text><rect x="274" y="713" width="52" height="16" rx="2" fill="#0b1f3a"/>
+<text x="300" y="725" text-anchor="middle" font-family="Geist Mono, ui-monospace, monospace" font-size="9.2" letter-spacing="0.06em" fill="#b4c4da">UPLOAD</text><rect x="382" y="769" width="77" height="16" rx="2" fill="#0b1f3a"/>
+<text x="420" y="781" text-anchor="middle" font-family="Geist Mono, ui-monospace, monospace" font-size="9.2" letter-spacing="0.06em" fill="#b4c4da">ANSWER KEY</text>
+<g id="n-gen" data-x="40" data-y="360" data-w="160">
+<rect x="40" y="360" width="160" height="64" rx="6" fill="#0b1f3a"/>
+<rect class="box" x="40" y="360" width="160" height="64" rx="6" fill="#11284a" stroke="rgba(238,243,250,0.72)" stroke-width="1.1"/>
+<rect class="glow" x="36" y="356" width="168" height="72" rx="9" fill="none" stroke="#6fc3ff" stroke-width="2" opacity="0"/>
+<rect x="50" y="370" width="49" height="15" rx="2" fill="none" stroke="#8ea3bf" stroke-width="0.8"/>
+<text x="75" y="380.5" text-anchor="middle" font-family="Geist Mono, ui-monospace, monospace" font-size="8.5" font-weight="500" letter-spacing="0.12em" fill="#8ea3bf">SOURCE</text>
+<text x="50" y="402" font-family="Geist, system-ui, sans-serif" font-size="14.5" font-weight="600" fill="#eef3fa">Generator</text>
+<text class="sub" x="50" y="416" font-family="Geist Mono, ui-monospace, monospace" font-size="9.8" fill="#8ea3bf">EPANET · 3.8M events</text>
+<g class="check" opacity="0"><polygon points="191.9,379.0 185.0,383.0 178.1,379.0 178.1,371.0 185.0,367.0 191.9,371.0" fill="#6fc3ff"/><path d="M181.5,375 l2.4,2.6 l4.6,-5" fill="none" stroke="#0b1f3a" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></g>
+</g><g id="n-kafka" data-x="236" data-y="360" data-w="156">
+<rect x="236" y="360" width="156" height="64" rx="6" fill="#0b1f3a"/>
+<rect class="box" x="236" y="360" width="156" height="64" rx="6" fill="#11284a" stroke="rgba(238,243,250,0.72)" stroke-width="1.1"/>
+<rect class="glow" x="232" y="356" width="164" height="72" rx="9" fill="none" stroke="#6fc3ff" stroke-width="2" opacity="0"/>
+<rect x="246" y="370" width="49" height="15" rx="2" fill="none" stroke="#8ea3bf" stroke-width="0.8"/>
+<text x="271" y="380.5" text-anchor="middle" font-family="Geist Mono, ui-monospace, monospace" font-size="8.5" font-weight="500" letter-spacing="0.12em" fill="#8ea3bf">BROKER</text>
+<text x="246" y="402" font-family="Geist, system-ui, sans-serif" font-size="14.5" font-weight="600" fill="#eef3fa">Kafka</text>
+<text class="sub" x="246" y="416" font-family="Geist Mono, ui-monospace, monospace" font-size="9.8" fill="#8ea3bf">2 raw topics · KRaft</text>
+<g class="check" opacity="0"><polygon points="383.9,379.0 377.0,383.0 370.1,379.0 370.1,371.0 377.0,367.0 383.9,371.0" fill="#6fc3ff"/><path d="M373.5,375 l2.4,2.6 l4.6,-5" fill="none" stroke="#0b1f3a" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></g>
+</g><g id="n-val" data-x="440" data-y="170" data-w="128">
+<rect x="440" y="170" width="128" height="64" rx="6" fill="#0b1f3a"/>
+<rect class="box" x="440" y="170" width="128" height="64" rx="6" fill="#11284a" stroke="rgba(238,243,250,0.72)" stroke-width="1.1"/>
+<rect class="glow" x="436" y="166" width="136" height="72" rx="9" fill="none" stroke="#6fc3ff" stroke-width="2" opacity="0"/>
+<rect x="450" y="180" width="43" height="15" rx="2" fill="none" stroke="#8ea3bf" stroke-width="0.8"/>
+<text x="472" y="190.5" text-anchor="middle" font-family="Geist Mono, ui-monospace, monospace" font-size="8.5" font-weight="500" letter-spacing="0.12em" fill="#8ea3bf">JOB 1</text>
+<text x="450" y="212" font-family="Geist, system-ui, sans-serif" font-size="14.5" font-weight="600" fill="#eef3fa">Validation</text>
+<text class="sub" x="450" y="226" font-family="Geist Mono, ui-monospace, monospace" font-size="9.8" fill="#8ea3bf">dedup · dead-letter</text>
+<g class="check" opacity="0"><polygon points="559.9,189.0 553.0,193.0 546.1,189.0 546.1,181.0 553.0,177.0 559.9,181.0" fill="#6fc3ff"/><path d="M549.5,185 l2.4,2.6 l4.6,-5" fill="none" stroke="#0b1f3a" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></g>
+</g><g id="n-feat" data-x="588" data-y="170" data-w="128">
+<rect x="588" y="170" width="128" height="64" rx="6" fill="#0b1f3a"/>
+<rect class="box" x="588" y="170" width="128" height="64" rx="6" fill="#11284a" stroke="rgba(238,243,250,0.72)" stroke-width="1.1"/>
+<rect class="glow" x="584" y="166" width="136" height="72" rx="9" fill="none" stroke="#6fc3ff" stroke-width="2" opacity="0"/>
+<rect x="598" y="180" width="43" height="15" rx="2" fill="none" stroke="#8ea3bf" stroke-width="0.8"/>
+<text x="620" y="190.5" text-anchor="middle" font-family="Geist Mono, ui-monospace, monospace" font-size="8.5" font-weight="500" letter-spacing="0.12em" fill="#8ea3bf">JOB 2</text>
+<text x="598" y="212" font-family="Geist, system-ui, sans-serif" font-size="14.5" font-weight="600" fill="#eef3fa">Features</text>
+<text class="sub" x="598" y="226" font-family="Geist Mono, ui-monospace, monospace" font-size="9.8" fill="#8ea3bf">15-min windows</text>
+<g class="check" opacity="0"><polygon points="707.9,189.0 701.0,193.0 694.1,189.0 694.1,181.0 701.0,177.0 707.9,181.0" fill="#6fc3ff"/><path d="M697.5,185 l2.4,2.6 l4.6,-5" fill="none" stroke="#0b1f3a" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></g>
+</g><g id="n-alert" data-x="736" data-y="170" data-w="128">
+<rect x="736" y="170" width="128" height="64" rx="6" fill="#0b1f3a"/>
+<rect class="box" x="736" y="170" width="128" height="64" rx="6" fill="#11284a" stroke="rgba(238,243,250,0.72)" stroke-width="1.1"/>
+<rect class="glow" x="732" y="166" width="136" height="72" rx="9" fill="none" stroke="#6fc3ff" stroke-width="2" opacity="0"/>
+<rect x="746" y="180" width="43" height="15" rx="2" fill="none" stroke="#8ea3bf" stroke-width="0.8"/>
+<text x="768" y="190.5" text-anchor="middle" font-family="Geist Mono, ui-monospace, monospace" font-size="8.5" font-weight="500" letter-spacing="0.12em" fill="#8ea3bf">JOB 3</text>
+<text x="746" y="212" font-family="Geist, system-ui, sans-serif" font-size="14.5" font-weight="600" fill="#eef3fa">Alerts</text>
+<text class="sub" x="746" y="226" font-family="Geist Mono, ui-monospace, monospace" font-size="9.8" fill="#8ea3bf">vs peer median</text>
+<g class="check" opacity="0"><polygon points="855.9,189.0 849.0,193.0 842.1,189.0 842.1,181.0 849.0,177.0 855.9,181.0" fill="#6fc3ff"/><path d="M845.5,185 l2.4,2.6 l4.6,-5" fill="none" stroke="#0b1f3a" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></g>
+</g><g id="n-shift" data-x="884" data-y="170" data-w="128">
+<rect x="884" y="170" width="128" height="64" rx="6" fill="#0b1f3a"/>
+<rect class="box" x="884" y="170" width="128" height="64" rx="6" fill="#11284a" stroke="rgba(238,243,250,0.72)" stroke-width="1.1"/>
+<rect class="glow" x="880" y="166" width="136" height="72" rx="9" fill="none" stroke="#6fc3ff" stroke-width="2" opacity="0"/>
+<rect x="894" y="180" width="43" height="15" rx="2" fill="none" stroke="#8ea3bf" stroke-width="0.8"/>
+<text x="916" y="190.5" text-anchor="middle" font-family="Geist Mono, ui-monospace, monospace" font-size="8.5" font-weight="500" letter-spacing="0.12em" fill="#8ea3bf">JOB 4</text>
+<text x="894" y="212" font-family="Geist, system-ui, sans-serif" font-size="14.5" font-weight="600" fill="#eef3fa">Level shift</text>
+<text class="sub" x="894" y="226" font-family="Geist Mono, ui-monospace, monospace" font-size="9.8" fill="#8ea3bf">daily · R4</text>
+<g class="check" opacity="0"><polygon points="1003.9,189.0 997.0,193.0 990.1,189.0 990.1,181.0 997.0,177.0 1003.9,181.0" fill="#6fc3ff"/><path d="M993.5,185 l2.4,2.6 l4.6,-5" fill="none" stroke="#0b1f3a" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></g>
+</g><g id="n-der" data-x="1048" data-y="170" data-w="148">
+<rect x="1048" y="170" width="148" height="64" rx="6" fill="#0b1f3a"/>
+<rect class="box" x="1048" y="170" width="148" height="64" rx="6" fill="#11284a" stroke="rgba(238,243,250,0.72)" stroke-width="1.1"/>
+<rect class="glow" x="1044" y="166" width="156" height="72" rx="9" fill="none" stroke="#6fc3ff" stroke-width="2" opacity="0"/>
+<rect x="1058" y="180" width="43" height="15" rx="2" fill="none" stroke="#8ea3bf" stroke-width="0.8"/>
+<text x="1080" y="190.5" text-anchor="middle" font-family="Geist Mono, ui-monospace, monospace" font-size="8.5" font-weight="500" letter-spacing="0.12em" fill="#8ea3bf">KAFKA</text>
+<text x="1058" y="212" font-family="Geist, system-ui, sans-serif" font-size="14.5" font-weight="600" fill="#eef3fa">Derived topics</text>
+<text class="sub" x="1058" y="226" font-family="Geist Mono, ui-monospace, monospace" font-size="9.8" fill="#8ea3bf">alerts · features</text>
+<g class="check" opacity="0"><polygon points="1187.9,189.0 1181.0,193.0 1174.1,189.0 1174.1,181.0 1181.0,177.0 1187.9,181.0" fill="#6fc3ff"/><path d="M1177.5,185 l2.4,2.6 l4.6,-5" fill="none" stroke="#0b1f3a" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></g>
+</g><g id="n-bridge" data-x="1232" data-y="170" data-w="156">
+<rect x="1232" y="170" width="156" height="64" rx="6" fill="#0b1f3a"/>
+<rect class="box" x="1232" y="170" width="156" height="64" rx="6" fill="#11284a" stroke="rgba(238,243,250,0.72)" stroke-width="1.1"/>
+<rect class="glow" x="1228" y="166" width="164" height="72" rx="9" fill="none" stroke="#6fc3ff" stroke-width="2" opacity="0"/>
+<rect x="1242" y="180" width="55" height="15" rx="2" fill="none" stroke="#8ea3bf" stroke-width="0.8"/>
+<text x="1270" y="190.5" text-anchor="middle" font-family="Geist Mono, ui-monospace, monospace" font-size="8.5" font-weight="500" letter-spacing="0.12em" fill="#8ea3bf">SERVICE</text>
+<text x="1242" y="212" font-family="Geist, system-ui, sans-serif" font-size="14.5" font-weight="600" fill="#eef3fa">Live bridge</text>
+<text class="sub" x="1242" y="226" font-family="Geist Mono, ui-monospace, monospace" font-size="9.8" fill="#8ea3bf">upserts to Postgres</text>
+<g class="check" opacity="0"><polygon points="1379.9,189.0 1373.0,193.0 1366.1,189.0 1366.1,181.0 1373.0,177.0 1379.9,181.0" fill="#6fc3ff"/><path d="M1369.5,185 l2.4,2.6 l4.6,-5" fill="none" stroke="#0b1f3a" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></g>
+</g><g id="n-graf" data-x="1424" data-y="170" data-w="136">
+<rect x="1424" y="170" width="136" height="64" rx="6" fill="#0b1f3a"/>
+<rect class="box" x="1424" y="170" width="136" height="64" rx="6" fill="#11284a" stroke="rgba(238,243,250,0.72)" stroke-width="1.1"/>
+<rect class="glow" x="1420" y="166" width="144" height="72" rx="9" fill="none" stroke="#6fc3ff" stroke-width="2" opacity="0"/>
+<rect x="1434" y="180" width="37" height="15" rx="2" fill="none" stroke="#8ea3bf" stroke-width="0.8"/>
+<text x="1452" y="190.5" text-anchor="middle" font-family="Geist Mono, ui-monospace, monospace" font-size="8.5" font-weight="500" letter-spacing="0.12em" fill="#8ea3bf">LIVE</text>
+<text x="1434" y="212" font-family="Geist, system-ui, sans-serif" font-size="14.5" font-weight="600" fill="#eef3fa">Grafana</text>
+<text class="sub" x="1434" y="226" font-family="Geist Mono, ui-monospace, monospace" font-size="9.8" fill="#8ea3bf">refresh 5 s</text>
+<g class="check" opacity="0"><polygon points="1551.9,189.0 1545.0,193.0 1538.1,189.0 1538.1,181.0 1545.0,177.0 1551.9,181.0" fill="#6fc3ff"/><path d="M1541.5,185 l2.4,2.6 l4.6,-5" fill="none" stroke="#0b1f3a" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></g>
+</g><g id="n-arch" data-x="440" data-y="500" data-w="144">
+<rect x="440" y="500" width="144" height="64" rx="6" fill="#0b1f3a"/>
+<rect class="box" x="440" y="500" width="144" height="64" rx="6" fill="#11284a" stroke="rgba(238,243,250,0.72)" stroke-width="1.1"/>
+<rect class="glow" x="436" y="496" width="152" height="72" rx="9" fill="none" stroke="#6fc3ff" stroke-width="2" opacity="0"/>
+<rect x="450" y="510" width="55" height="15" rx="2" fill="none" stroke="#8ea3bf" stroke-width="0.8"/>
+<text x="478" y="520.5" text-anchor="middle" font-family="Geist Mono, ui-monospace, monospace" font-size="8.5" font-weight="500" letter-spacing="0.12em" fill="#8ea3bf">SERVICE</text>
+<text x="450" y="542" font-family="Geist, system-ui, sans-serif" font-size="14.5" font-weight="600" fill="#eef3fa">Archiver</text>
+<text class="sub" x="450" y="556" font-family="Geist Mono, ui-monospace, monospace" font-size="9.8" fill="#8ea3bf">commit after write</text>
+<g class="check" opacity="0"><polygon points="575.9,519.0 569.0,523.0 562.1,519.0 562.1,511.0 569.0,507.0 575.9,511.0" fill="#6fc3ff"/><path d="M565.5,515 l2.4,2.6 l4.6,-5" fill="none" stroke="#0b1f3a" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></g>
+</g><g id="n-minio" data-x="620" data-y="500" data-w="168">
+<rect x="620" y="500" width="168" height="64" rx="6" fill="#0b1f3a"/>
+<rect class="box" x="620" y="500" width="168" height="64" rx="6" fill="#11284a" stroke="rgba(238,243,250,0.72)" stroke-width="1.1"/>
+<rect class="glow" x="616" y="496" width="176" height="72" rx="9" fill="none" stroke="#6fc3ff" stroke-width="2" opacity="0"/>
+<rect x="630" y="510" width="43" height="15" rx="2" fill="none" stroke="#8ea3bf" stroke-width="0.8"/>
+<text x="652" y="520.5" text-anchor="middle" font-family="Geist Mono, ui-monospace, monospace" font-size="8.5" font-weight="500" letter-spacing="0.12em" fill="#8ea3bf">STORE</text>
+<text x="630" y="542" font-family="Geist, system-ui, sans-serif" font-size="14.5" font-weight="600" fill="#eef3fa">MinIO archive</text>
+<text class="sub" x="630" y="556" font-family="Geist Mono, ui-monospace, monospace" font-size="9.8" fill="#8ea3bf">723 files · 0 gaps</text>
+<g class="check" opacity="0"><polygon points="779.9,519.0 773.0,523.0 766.1,519.0 766.1,511.0 773.0,507.0 779.9,511.0" fill="#6fc3ff"/><path d="M769.5,515 l2.4,2.6 l4.6,-5" fill="none" stroke="#0b1f3a" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></g>
+</g><g id="n-spark" data-x="824" data-y="500" data-w="172">
+<rect x="824" y="500" width="172" height="64" rx="6" fill="#0b1f3a"/>
+<rect class="box" x="824" y="500" width="172" height="64" rx="6" fill="#11284a" stroke="rgba(238,243,250,0.72)" stroke-width="1.1"/>
+<rect class="glow" x="820" y="496" width="180" height="72" rx="9" fill="none" stroke="#6fc3ff" stroke-width="2" opacity="0"/>
+<rect x="834" y="510" width="43" height="15" rx="2" fill="none" stroke="#8ea3bf" stroke-width="0.8"/>
+<text x="856" y="520.5" text-anchor="middle" font-family="Geist Mono, ui-monospace, monospace" font-size="8.5" font-weight="500" letter-spacing="0.12em" fill="#8ea3bf">BATCH</text>
+<text x="834" y="542" font-family="Geist, system-ui, sans-serif" font-size="14.5" font-weight="600" fill="#eef3fa">Spark batch</text>
+<text class="sub" x="834" y="556" font-family="Geist Mono, ui-monospace, monospace" font-size="9.8" fill="#8ea3bf">balance · star schema</text>
+<g class="check" opacity="0"><polygon points="987.9,519.0 981.0,523.0 974.1,519.0 974.1,511.0 981.0,507.0 987.9,511.0" fill="#6fc3ff"/><path d="M977.5,515 l2.4,2.6 l4.6,-5" fill="none" stroke="#0b1f3a" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></g>
+</g><g id="n-load" data-x="1048" data-y="360" data-w="148">
+<rect x="1048" y="360" width="148" height="64" rx="6" fill="#0b1f3a"/>
+<rect class="box" x="1048" y="360" width="148" height="64" rx="6" fill="#11284a" stroke="rgba(238,243,250,0.72)" stroke-width="1.1"/>
+<rect class="glow" x="1044" y="356" width="156" height="72" rx="9" fill="none" stroke="#6fc3ff" stroke-width="2" opacity="0"/>
+<rect x="1058" y="370" width="43" height="15" rx="2" fill="none" stroke="#8ea3bf" stroke-width="0.8"/>
+<text x="1080" y="380.5" text-anchor="middle" font-family="Geist Mono, ui-monospace, monospace" font-size="8.5" font-weight="500" letter-spacing="0.12em" fill="#8ea3bf">BATCH</text>
+<text x="1058" y="402" font-family="Geist, system-ui, sans-serif" font-size="14.5" font-weight="600" fill="#eef3fa">Spark load</text>
+<text class="sub" x="1058" y="416" font-family="Geist Mono, ui-monospace, monospace" font-size="9.8" fill="#8ea3bf">to frozen offsets</text>
+<g class="check" opacity="0"><polygon points="1187.9,379.0 1181.0,383.0 1174.1,379.0 1174.1,371.0 1181.0,367.0 1187.9,371.0" fill="#6fc3ff"/><path d="M1177.5,375 l2.4,2.6 l4.6,-5" fill="none" stroke="#0b1f3a" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></g>
+</g><g id="n-ice" data-x="1232" data-y="360" data-w="180">
+<rect x="1232" y="360" width="180" height="64" rx="6" fill="#0b1f3a"/>
+<rect class="box" x="1232" y="360" width="180" height="64" rx="6" fill="rgba(111,195,255,0.12)" stroke="#6fc3ff" stroke-width="1.8"/>
+<rect class="glow" x="1228" y="356" width="188" height="72" rx="9" fill="none" stroke="#6fc3ff" stroke-width="2" opacity="0"/>
+<rect x="1242" y="370" width="68" height="15" rx="2" fill="none" stroke="#6fc3ff" stroke-width="0.8"/>
+<text x="1276" y="380.5" text-anchor="middle" font-family="Geist Mono, ui-monospace, monospace" font-size="8.5" font-weight="500" letter-spacing="0.12em" fill="#6fc3ff">LAKEHOUSE</text>
+<text x="1242" y="402" font-family="Geist, system-ui, sans-serif" font-size="14.5" font-weight="600" fill="#eef3fa">Iceberg</text>
+<text class="sub" x="1242" y="416" font-family="Geist Mono, ui-monospace, monospace" font-size="9.8" fill="#8ea3bf">JDBC catalog · Postgres</text>
+<g class="check" opacity="0"><polygon points="1403.9,379.0 1397.0,383.0 1390.1,379.0 1390.1,371.0 1397.0,367.0 1403.9,371.0" fill="#6fc3ff"/><path d="M1393.5,375 l2.4,2.6 l4.6,-5" fill="none" stroke="#0b1f3a" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></g>
+</g><g id="n-trino" data-x="1448" data-y="360" data-w="112">
+<rect x="1448" y="360" width="112" height="64" rx="6" fill="#0b1f3a"/>
+<rect class="box" x="1448" y="360" width="112" height="64" rx="6" fill="#11284a" stroke="rgba(238,243,250,0.72)" stroke-width="1.1"/>
+<rect class="glow" x="1444" y="356" width="120" height="72" rx="9" fill="none" stroke="#6fc3ff" stroke-width="2" opacity="0"/>
+<rect x="1458" y="370" width="43" height="15" rx="2" fill="none" stroke="#8ea3bf" stroke-width="0.8"/>
+<text x="1480" y="380.5" text-anchor="middle" font-family="Geist Mono, ui-monospace, monospace" font-size="8.5" font-weight="500" letter-spacing="0.12em" fill="#8ea3bf">QUERY</text>
+<text x="1458" y="402" font-family="Geist, system-ui, sans-serif" font-size="14.5" font-weight="600" fill="#eef3fa">Trino</text>
+<text class="sub" x="1458" y="416" font-family="Geist Mono, ui-monospace, monospace" font-size="9.8" fill="#8ea3bf">4 marts</text>
+<g class="check" opacity="0"><polygon points="1551.9,379.0 1545.0,383.0 1538.1,379.0 1538.1,371.0 1545.0,367.0 1551.9,371.0" fill="#6fc3ff"/><path d="M1541.5,375 l2.4,2.6 l4.6,-5" fill="none" stroke="#0b1f3a" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></g>
+</g><g id="n-pbi" data-x="1448" data-y="500" data-w="112">
+<rect x="1448" y="500" width="112" height="64" rx="6" fill="#0b1f3a"/>
+<rect class="box" x="1448" y="500" width="112" height="64" rx="6" fill="#11284a" stroke="rgba(238,243,250,0.72)" stroke-width="1.1"/>
+<rect class="glow" x="1444" y="496" width="120" height="72" rx="9" fill="none" stroke="#6fc3ff" stroke-width="2" opacity="0"/>
+<rect x="1458" y="510" width="24" height="15" rx="2" fill="none" stroke="#8ea3bf" stroke-width="0.8"/>
+<text x="1470" y="520.5" text-anchor="middle" font-family="Geist Mono, ui-monospace, monospace" font-size="8.5" font-weight="500" letter-spacing="0.12em" fill="#8ea3bf">BI</text>
+<text x="1458" y="542" font-family="Geist, system-ui, sans-serif" font-size="14.5" font-weight="600" fill="#eef3fa">Power BI</text>
+<text class="sub" x="1458" y="556" font-family="Geist Mono, ui-monospace, monospace" font-size="9.8" fill="#8ea3bf">Parquet</text>
+<g class="check" opacity="0"><polygon points="1551.9,519.0 1545.0,523.0 1538.1,519.0 1538.1,511.0 1545.0,507.0 1551.9,511.0" fill="#6fc3ff"/><path d="M1541.5,515 l2.4,2.6 l4.6,-5" fill="none" stroke="#0b1f3a" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></g>
+</g><g id="n-raw" data-x="620" data-y="690" data-w="196">
+<rect x="620" y="690" width="196" height="64" rx="6" fill="#0b1f3a"/>
+<rect class="box" x="620" y="690" width="196" height="64" rx="6" fill="#11284a" stroke="rgba(238,243,250,0.72)" stroke-width="1.1"/>
+<rect class="glow" x="616" y="686" width="204" height="72" rx="9" fill="none" stroke="#6fc3ff" stroke-width="2" opacity="0"/>
+<rect x="630" y="700" width="43" height="15" rx="2" fill="none" stroke="#8ea3bf" stroke-width="0.8"/>
+<text x="652" y="710.5" text-anchor="middle" font-family="Geist Mono, ui-monospace, monospace" font-size="8.5" font-weight="500" letter-spacing="0.12em" fill="#8ea3bf">STORE</text>
+<text x="630" y="732" font-family="Geist, system-ui, sans-serif" font-size="14.5" font-weight="600" fill="#eef3fa">Reference files</text>
+<text class="sub" x="630" y="746" font-family="Geist Mono, ui-monospace, monospace" font-size="9.8" fill="#8ea3bf">MinIO · _RUN_COMPLETE</text>
+<g class="check" opacity="0"><polygon points="807.9,709.0 801.0,713.0 794.1,709.0 794.1,701.0 801.0,697.0 807.9,701.0" fill="#6fc3ff"/><path d="M797.5,705 l2.4,2.6 l4.6,-5" fill="none" stroke="#0b1f3a" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></g>
+</g><g id="n-key" data-x="1048" data-y="690" data-w="148">
+<rect x="1048" y="690" width="148" height="64" rx="6" fill="#0b1f3a"/>
+<rect class="box" x="1048" y="690" width="148" height="64" rx="6" fill="#11284a" stroke="rgba(238,243,250,0.72)" stroke-width="1.1"/>
+<rect class="glow" x="1044" y="686" width="156" height="72" rx="9" fill="none" stroke="#6fc3ff" stroke-width="2" opacity="0"/>
+<rect x="1058" y="700" width="74" height="15" rx="2" fill="none" stroke="#8ea3bf" stroke-width="0.8"/>
+<text x="1095" y="710.5" text-anchor="middle" font-family="Geist Mono, ui-monospace, monospace" font-size="8.5" font-weight="500" letter-spacing="0.12em" fill="#8ea3bf">RESTRICTED</text>
+<text x="1058" y="732" font-family="Geist, system-ui, sans-serif" font-size="14.5" font-weight="600" fill="#eef3fa">Answer key</text>
+<text class="sub" x="1058" y="746" font-family="Geist Mono, ui-monospace, monospace" font-size="9.8" fill="#8ea3bf">planted truth</text>
+<g class="check" opacity="0"><polygon points="1187.9,709.0 1181.0,713.0 1174.1,709.0 1174.1,701.0 1181.0,697.0 1187.9,701.0" fill="#6fc3ff"/><path d="M1177.5,705 l2.4,2.6 l4.6,-5" fill="none" stroke="#0b1f3a" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></g>
+</g><g id="n-eval" data-x="1232" data-y="690" data-w="180">
+<rect x="1232" y="690" width="180" height="64" rx="6" fill="#0b1f3a"/>
+<rect class="box" x="1232" y="690" width="180" height="64" rx="6" fill="#11284a" stroke="rgba(238,243,250,0.72)" stroke-width="1.1"/>
+<rect class="glow" x="1228" y="686" width="188" height="72" rx="9" fill="none" stroke="#6fc3ff" stroke-width="2" opacity="0"/>
+<rect x="1242" y="700" width="43" height="15" rx="2" fill="none" stroke="#8ea3bf" stroke-width="0.8"/>
+<text x="1264" y="710.5" text-anchor="middle" font-family="Geist Mono, ui-monospace, monospace" font-size="8.5" font-weight="500" letter-spacing="0.12em" fill="#8ea3bf">SCORE</text>
+<text x="1242" y="732" font-family="Geist, system-ui, sans-serif" font-size="14.5" font-weight="600" fill="#eef3fa">Evaluation</text>
+<text class="sub" x="1242" y="746" font-family="Geist Mono, ui-monospace, monospace" font-size="9.8" fill="#8ea3bf">after detection only</text>
+<g class="check" opacity="0"><polygon points="1403.9,709.0 1397.0,713.0 1390.1,709.0 1390.1,701.0 1397.0,697.0 1403.9,701.0" fill="#6fc3ff"/><path d="M1393.5,705 l2.4,2.6 l4.6,-5" fill="none" stroke="#0b1f3a" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></g>
+</g>
+</svg>
+<div class="legend"><span><i class="l"></i>data flow</span><span><i class="l a"></i>into and out of the lakehouse</span>
+<span><i class="l d"></i>uploads, answer key, scores</span><span><i class="hx"></i>verified by Dagster</span><span class="r">all data simulated</span></div>
+</div><script>
+const T = {"gen": 0.3, "raw": 0.9, "key": 1.0, "kafka": 1.0, "val": 1.6, "arch": 1.7, "feat": 2.0, "minio": 2.3, "alert": 2.4, "shift": 2.8, "spark": 3.1, "der": 3.2, "bridge": 3.6, "load": 3.7, "graf": 4.0, "ice": 4.4, "trino": 5.0, "pbi": 5.4, "eval": 6.2}, WIN = {"gen>kafka": [0.3, 1.0], "kafka>val": [1.0, 1.6], "kafka>arch": [1.0, 1.7], "val>feat": [1.6, 2.0], "feat>alert": [2.0, 2.4], "alert>shift": [2.4, 2.8], "shift>der": [2.8, 3.2], "der>bridge": [3.2, 3.6], "bridge>graf": [3.6, 4.0], "arch>minio": [1.7, 2.3], "minio>spark": [2.3, 3.1], "der>load": [3.2, 3.7], "load>ice": [3.7, 4.4], "spark>ice": [3.1, 4.4], "ice>trino": [4.4, 5.0], "trino>pbi": [5.0, 5.4], "raw>spark": [0.9, 3.1], "key>eval": [5.6, 6.2], "eval>ice": [6.2, 6.7], "gen>raw": [0.3, 0.9], "gen>key": [0.3, 1.0]}, LOOP = 8.4, NS = 'http://www.w3.org/2000/svg';
+const cl = (x) => Math.max(0, Math.min(1, x)), ease = (x) => x * x * (3 - 2 * x);
+const nodes = Object.fromEntries(Object.keys(T).map((k) => [k, document.getElementById('n-' + k)]));
+const edges = Object.keys(WIN).map((e) => ({ e, el: document.getElementById('e-' + e.replace('>', '-')), win: WIN[e] }));
+edges.forEach((x) => { x.len = x.el.getTotalLength(); x.kind = x.el.dataset.kind; });
+const dots = document.getElementById('dots'), count = document.getElementById('count');
+const subs = { minio: (t) => `${Math.round(723 * cl((t - T.minio) / (T.spark - T.minio)))} files · 0 gaps`,
+  key: (t) => t < 5.6 ? 'sealed' : 'opened for scoring',
+  eval: (t) => t < T.eval ? 'after detection only' : '12 / 12 · precision 0.94' };
+const orig = Object.fromEntries(Object.keys(T).map((k) => [k, nodes[k].querySelector('.sub').textContent]));
+function setT(t) {
+  t = ((t % LOOP) + LOOP) % LOOP;
+  const fade = t > 7.9 ? ease(cl((t - 7.9) / 0.5)) : 0;
+  for (const [k, g] of Object.entries(nodes)) {
+    const a = ease(cl((t - T[k]) / 0.3)) * (1 - fade);
+    g.setAttribute('opacity', (0.32 + 0.68 * a).toFixed(3));
+    const since = t - T[k];
+    g.querySelector('.glow').setAttribute('opacity', since > 0 && since < 1.2 ? (Math.exp(-since * 2.6) * (1 - fade)).toFixed(3) : 0);
+    g.querySelector('.check').setAttribute('opacity', (ease(cl((t - T[k] - 0.45) / 0.25)) * (1 - fade)).toFixed(3));
+    const sub = g.querySelector('.sub'); sub.textContent = subs[k] ? subs[k](t) : orig[k];
+  }
+  count.textContent = Math.round(3816525 * ease(cl((t - 0.3) / (T.ice - 0.3)))).toLocaleString('en-US') + ' EVENTS';
+  dots.replaceChildren();
+  for (const x of edges) {
+    const [s, e] = x.win, live = cl((t - s) / Math.max(0.2, e - s));
+    x.el.setAttribute('opacity', (0.3 + 0.7 * (t >= e ? 1 : live) * (1 - fade)).toFixed(3));
+    if (fade > 0.6) continue;
+    const n = x.kind === 'dash' ? 2 : 3;
+    for (let i = 0; i < n; i++) {
+      // a short train of drops travels the edge during its window, then one drop keeps the line alive
+      let u = t < e ? (t - s) / Math.max(0.2, e - s) - i * 0.16 : ((t - e) / 1.4 + i / n) % 1;
+      if (t < s || u < 0 || u > 1 || (t >= e && i > 0)) continue;
+      const p = x.el.getPointAtLength(u * x.len), c = document.createElementNS(NS, 'circle');
+      c.setAttribute('cx', p.x.toFixed(1)); c.setAttribute('cy', p.y.toFixed(1)); c.setAttribute('r', x.kind === 'acc' ? 4 : 3.2);
+      c.setAttribute('fill', x.kind === 'dash' ? '#9fb3d1' : '#6fc3ff'); c.setAttribute('opacity', (t >= e ? 0.75 : 1) * (1 - fade));
+      dots.appendChild(c);
+    }
+  }
+}
+window.setT = setT;
+const still = new URLSearchParams(location.hash.slice(1)).get('t');
+if (still !== null) setT(+still); else { const t0 = performance.now(); (function loop(now) { setT((now - t0) / 1000); requestAnimationFrame(loop); })(t0); }
+</script></body></html>
