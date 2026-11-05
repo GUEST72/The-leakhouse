@@ -4,156 +4,185 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Water Pipeline Flow</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;500;600;700&family=Barlow:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
+  /* Layout concept: one as-built hydraulic drawing. Every stage is a real water-works part that fills with water. */
   :root {
-    --bg: #f4f6f9; --surface: #ffffff; --surface-2: #f8f9fb; --ink: #17202b; --muted: #5b6672; --line: #d3d9e1;
-    --stream: #2a78d6; --batch: #eb6834; --live: #1baf7a; --serve: #eda100; --eval: #e87ba4; --upload: #8a94a0;
-    --shadow: 0 1px 2px rgba(20, 30, 45, .06), 0 6px 18px rgba(20, 30, 45, .06);
+    --bg: #0a2c63; --sheet: #0f3a7d; --cell: #134489; --cell-2: #1a4f9b; --ink: #f1f6ff; --muted: #b7cbec; --line: #dbe7fb;
+    --faint: rgba(219, 231, 251, .1); --faint-2: rgba(219, 231, 251, .2); --bore: #0a2c63;
+    --stream: #5fdcff; --batch: #ffae57; --live: #6cf0bf; --serve: #ffdd6e; --eval: #ff9cc0; --upload: #a9c1e6; --stamp: #ffae57;
+    --disp: "Bahnschrift", "Barlow Condensed", "DIN Alternate", "Arial Narrow", sans-serif;
+    --body: "Barlow", "Segoe UI", system-ui, sans-serif;
+    --mono: "IBM Plex Mono", "Cascadia Mono", Consolas, monospace;
+    color-scheme: dark;
   }
-  @media (prefers-color-scheme: dark) {
-    :root:not([data-theme="light"]) {
-      --bg: #0e1319; --surface: #161d26; --surface-2: #1b2430; --ink: #e8edf3; --muted: #9ba7b4; --line: #2c3744;
-      --stream: #3987e5; --batch: #d95926; --live: #199e70; --serve: #c98500; --eval: #d55181; --upload: #6f7a86;
-      --shadow: 0 1px 2px rgba(0, 0, 0, .3), 0 6px 18px rgba(0, 0, 0, .25);
-    }
-  }
-  :root[data-theme="dark"] {
-    --bg: #0e1319; --surface: #161d26; --surface-2: #1b2430; --ink: #e8edf3; --muted: #9ba7b4; --line: #2c3744;
-    --stream: #3987e5; --batch: #d95926; --live: #199e70; --serve: #c98500; --eval: #d55181; --upload: #6f7a86;
-    --shadow: 0 1px 2px rgba(0, 0, 0, .3), 0 6px 18px rgba(0, 0, 0, .25);
+  :root[data-theme="light"] {
+    --bg: #dfe7ea; --sheet: #eef3f3; --cell: #f7fafa; --cell-2: #e3ecf0; --ink: #0d2c5e; --muted: #4c6488; --line: #123a73;
+    --faint: rgba(18, 58, 115, .08); --faint-2: rgba(18, 58, 115, .17); --bore: #eef3f3;
+    --stream: #0b86d1; --batch: #d9631c; --live: #0d9968; --serve: #b98a00; --eval: #c9457c; --upload: #6d83a3; --stamp: #c64a12;
+    color-scheme: light;
   }
 
   * { box-sizing: border-box; }
   html, body { margin: 0; }
-  body {
-    background: var(--bg); color: var(--ink);
-    font: 15px/1.5 "Segoe UI", system-ui, -apple-system, Roboto, "Helvetica Neue", Arial, sans-serif;
-  }
-  .mono, code { font-family: "Cascadia Mono", Consolas, "SFMono-Regular", Menlo, monospace; }
+  body { background: var(--bg); color: var(--ink); font: 15px/1.5 var(--body); }
+  .mono, code { font-family: var(--mono); }
 
   header {
-    display: flex; flex-wrap: wrap; align-items: center; gap: 12px 24px;
-    padding: 18px 24px 10px; max-width: 1760px; margin: 0 auto;
+    display: flex; flex-wrap: wrap; align-items: flex-end; gap: 12px 28px;
+    padding: 20px 24px 12px; max-width: 1860px; margin: 0 auto;
   }
-  header h1 { font-size: 20px; margin: 0; letter-spacing: -.01em; }
-  header p { margin: 2px 0 0; color: var(--muted); font-size: 13.5px; }
-  .controls { margin-left: auto; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  .eyebrow { font: 500 12.5px/1 var(--mono); letter-spacing: .04em; color: var(--muted); }
+  header h1 { font: 600 clamp(30px, 4vw, 46px)/1.02 var(--disp); margin: 6px 0 0; font-stretch: 85%; text-wrap: balance; }
+  .controls { margin-left: auto; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
   button {
-    font: inherit; font-size: 13.5px; color: var(--ink); background: var(--surface);
-    border: 1px solid var(--line); border-radius: 8px; padding: 6px 12px; cursor: pointer;
+    font: 500 13px/1 var(--mono); color: var(--ink); background: transparent;
+    border: 1px solid var(--line); border-radius: 0; padding: 8px 11px; cursor: pointer;
   }
-  button:hover { border-color: var(--muted); }
-  button:focus-visible, .node:focus-visible { outline: 2px solid var(--stream); outline-offset: 2px; }
-  button[aria-pressed="true"] { background: var(--ink); color: var(--surface); border-color: var(--ink); }
-  .stepper { display: flex; align-items: center; gap: 6px; }
-  .stepper span { min-width: 92px; text-align: center; font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
+  button:hover { background: var(--faint-2); }
+  button:focus-visible, .node:focus-visible { outline: 2px solid var(--stamp); outline-offset: 3px; }
+  button[aria-pressed="true"] { background: var(--ink); color: var(--bg); }
+  .stepper { display: flex; align-items: center; gap: 0; }
+  .stepper span { min-width: 112px; text-align: center; font: 500 13px/1 var(--mono); color: var(--muted); }
+
+  #meter {
+    display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 12px;
+    max-width: 1860px; margin: 0 auto; padding: 0 24px 12px; color: var(--muted);
+  }
+  #meter b { font: 500 clamp(24px, 3vw, 32px)/1.1 var(--mono); color: var(--batch); font-variant-numeric: tabular-nums; }
 
   .legend {
-    display: flex; flex-wrap: wrap; gap: 6px 18px; padding: 0 24px 12px; max-width: 1760px; margin: 0 auto;
-    font-size: 12.5px; color: var(--muted);
+    display: flex; flex-wrap: wrap; gap: 6px 20px; padding: 0 24px 12px; max-width: 1860px; margin: 0 auto;
+    font-size: 13px; color: var(--muted);
   }
-  .legend i { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 6px; vertical-align: -1px; }
-  .legend i.sq { border-radius: 2px; }
+  .legend i { display: inline-block; width: 26px; height: 7px; margin-right: 7px; vertical-align: 2px; border-block: 1.5px solid var(--line); }
+  .legend i.sq { background-image: repeating-linear-gradient(90deg, transparent 0 4px, var(--bg) 4px 7px); }
   .legend b { font-weight: 600; color: var(--ink); }
 
   main {
-    display: grid; grid-template-columns: minmax(0, 1fr) 380px; gap: 16px;
-    padding: 0 24px 24px; max-width: 1760px; margin: 0 auto;
+    display: grid; grid-template-columns: minmax(0, 1fr) 360px; gap: 16px;
+    padding: 0 24px 24px; max-width: 1860px; margin: 0 auto;
   }
   @media (max-width: 1150px) { main { grid-template-columns: minmax(0, 1fr); } }
   @media (max-width: 600px) {
-    header, .legend { padding-left: 16px; padding-right: 16px; }
+    header, .legend, #meter { padding-left: 16px; padding-right: 16px; }
     main { padding: 0 16px 16px; }
   }
-  figure {
-    margin: 0; background: var(--surface); border: 1px solid var(--line); border-radius: 14px;
-    box-shadow: var(--shadow); padding: 8px; overflow: hidden;
-  }
-  svg { display: block; width: 100%; height: auto; }
+  figure { margin: 0; background: var(--sheet); overflow-x: auto; }
+  svg { display: block; width: 100%; min-width: 860px; height: auto; }
 
-  aside {
-    background: var(--surface); border: 1px solid var(--line); border-radius: 14px; box-shadow: var(--shadow);
-    padding: 20px 22px; align-self: start; position: sticky; top: 12px;
-  }
-  .kicker { font-size: 11.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
-  aside h2 { font-size: 19px; margin: 4px 0 10px; letter-spacing: -.01em; }
-  aside p { margin: 0 0 10px; font-size: 14px; }
-  dl { margin: 12px 0 0; display: grid; grid-template-columns: auto 1fr; gap: 6px 14px; font-size: 13px; }
+  aside { align-self: start; position: sticky; top: 12px; padding: 18px 20px 16px; background: var(--sheet); border: 1px solid var(--line); outline: 1px solid var(--line); outline-offset: 3px; }
+  .kicker { font: 500 12px/1.2 var(--mono); color: var(--muted); }
+  aside h2 { font: 600 30px/1.05 var(--disp); font-stretch: 88%; margin: 6px 0 12px; text-wrap: balance; }
+  aside p { margin: 0 0 10px; font-size: 14.5px; max-width: 62ch; }
+  dl { margin: 12px 0 0; display: grid; grid-template-columns: auto 1fr; gap: 0 14px; font-size: 13px; }
+  dt, dd { padding: 5px 0; border-top: 1px solid var(--faint-2); }
   dt { color: var(--muted); }
-  dd { margin: 0; font-variant-numeric: tabular-nums; }
-  .proof {
-    margin-top: 14px; padding: 10px 12px; border-radius: 10px; background: var(--surface-2);
-    border-left: 3px solid var(--ink); font-size: 13px;
+  dd { margin: 0; font-family: var(--mono); font-size: 12.5px; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+  .proof { position: relative; margin-top: 22px; padding: 16px 12px 10px; border: 1.5px dashed var(--stamp); font-size: 13.5px; }
+  .proof b {
+    position: absolute; top: -11px; left: 10px; padding: 3px 8px; transform: rotate(-2deg);
+    font: 600 11.5px/1 var(--mono); background: var(--stamp); color: var(--bg);
   }
-  .proof b { display: block; font-size: 11.5px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); margin-bottom: 2px; }
   .proof:empty { display: none; }
-  .hint { margin-top: 16px; font-size: 12px; color: var(--muted); border-top: 1px solid var(--line); padding-top: 10px; }
-  kbd {
-    font: 11px "Cascadia Mono", Consolas, monospace; border: 1px solid var(--line); border-bottom-width: 2px;
-    border-radius: 4px; padding: 0 4px; background: var(--surface-2);
-  }
+  .hint { margin-top: 16px; font-size: 12.5px; color: var(--muted); border-top: 1px solid var(--faint-2); padding-top: 10px; }
+  kbd { font: 11px var(--mono); border: 1px solid var(--muted); padding: 0 4px; }
 
-  /* diagram */
+  /* the drawing */
+  .frame { fill: none; stroke: var(--line); stroke-width: 1.4; }
+  .zone { fill: var(--muted); font: 500 12px var(--mono); text-anchor: middle; }
+  .zt { stroke: var(--line); stroke-width: 1; }
+  .note { fill: var(--muted); font: 500 12px var(--mono); }
+
   .node { cursor: pointer; transition: opacity .35s; }
-  .node .box { fill: var(--surface); stroke: var(--line); stroke-width: 1.2; transition: stroke .2s; }
-  .node:hover .box, .node.sel .box { stroke: var(--ink); }
-  .node .accent { fill: var(--c); }
-  .node .ttl { font-size: 16px; font-weight: 650; fill: var(--ink); }
-  .node .ln { font-size: 14px; fill: var(--muted); }
-  .node .ln.mono { font-size: 11px; }
-  .node .val { font-size: 14px; fill: var(--ink); font-variant-numeric: tabular-nums; text-anchor: end; }
-  .node .sub .box { fill: var(--surface-2); }
-  .node .sub .ttl { font-size: 14.5px; }
+  .node .ves { fill: var(--cell); }
+  .node .wall { fill: none; stroke: var(--line); stroke-width: 2.2; stroke-linejoin: round; transition: stroke-width .2s; }
+  .node:hover .wall, .node.sel .wall { stroke-width: 3.6; }
+  .node .part { fill: var(--line); }
+  .node .thin { fill: none; stroke: var(--line); stroke-width: 1.5; }
+  .node text { paint-order: stroke; stroke: var(--cell); stroke-width: 3.5px; stroke-linejoin: round; }
+  .node .ttl { font: 600 19px var(--disp); font-stretch: 86%; fill: var(--ink); }
+  .node .ln { font: 500 14px var(--body); fill: var(--muted); }
+  .node .ln.mono { font: 400 11px var(--mono); }
+  .node .val { font: 500 13px var(--mono); fill: var(--ink); text-anchor: end; }
+  .node .sub .ttl { font-size: 17px; }
   .node .sub .ln { font-size: 12.5px; }
-  .node .pill rect { fill: var(--surface-2); stroke: var(--pc); stroke-width: 1.2; }
-  .node .pill .ttl { font-size: 13.5px; }
+  .node .pill rect { fill: var(--cell); stroke: var(--pc); stroke-width: 1.6; }
+  .node .pill .ttl { font-size: 16px; }
   .node .pill .ln { font-size: 12px; }
-  .node.k-dag .box { fill: var(--surface-2); stroke: var(--ink); stroke-dasharray: 5 4; }
-  .badge circle { fill: var(--ink); }
-  .badge text { fill: var(--surface); font-size: 11.5px; font-weight: 700; text-anchor: middle; }
-  .pulse .badge circle { animation: pulse 1.4s ease-in-out infinite; transform-box: fill-box; transform-origin: center; }
-  @keyframes pulse { 50% { transform: scale(1.35); } }
+  .node .wfill { fill: var(--c); fill-opacity: .3; }
+  .node .wtop { fill: none; stroke: var(--c); stroke-width: 2; }
+  .lvl { transition: transform 1.5s cubic-bezier(.3, .7, .2, 1); }
+  .intro .lvl { transition-delay: var(--lag, 0s); }
+  .dry .lvl { transform: translateY(var(--dry)); }
+  .berg { fill: var(--ink); fill-opacity: .16; }
+  .tip { fill: var(--ink); }
+  .bolt { fill: var(--line); }
+  .needle { stroke: var(--batch); stroke-width: 3; stroke-linecap: round; }
+  .drip { fill: var(--serve); }
+  .taplabel { font: 500 13px var(--mono); fill: var(--serve); text-anchor: middle; }
 
   .k-stream { --c: var(--stream); } .k-batch { --c: var(--batch); } .k-live { --c: var(--live); }
   .k-serve { --c: var(--serve); } .k-eval { --c: var(--eval); } .k-upload { --c: var(--upload); }
-  .k-store { --c: var(--muted); } .k-lake { --c: var(--ink); } .k-dag { --c: var(--ink); }
+  .k-store { --c: var(--batch); } .k-lake { --c: var(--stream); } .k-dag { --c: var(--ink); }
 
-  .edge { fill: none; stroke: var(--c); stroke-width: 2; stroke-opacity: .5; transition: opacity .35s; }
-  .edge.on { stroke-opacity: .9; stroke-width: 2.6; }
-  .elabel { font-size: 13px; fill: var(--muted); paint-order: stroke; stroke: var(--surface); stroke-width: 4px; stroke-linejoin: round; transition: opacity .35s; }
+  .seal polygon { fill: var(--stamp); stroke: var(--sheet); stroke-width: 2; }
+  .seal text { stroke: none; fill: var(--bg); font: 700 12.5px var(--mono); text-anchor: middle; }
+  .pulse .seal { animation: pulse 1.4s ease-in-out infinite; transform-box: fill-box; transform-origin: center; }
+  @keyframes pulse { 50% { scale: 1.3; } }
+
+  .rail { stroke: var(--line); stroke-width: 2.2; }
+  .tick { stroke: var(--line); stroke-width: 1; }
+  .node.k-dag .ves { fill: transparent; }
+  #carriage { transition: transform .9s cubic-bezier(.3, .7, .2, 1); }
+  #carriage polygon { fill: var(--stamp); }
+  #plumb { stroke: var(--stamp); stroke-width: 1.2; stroke-dasharray: 2 6; transition: opacity .4s; }
+
+  .edge { transition: opacity .35s; }
+  .edge .pwall { fill: none; stroke: var(--line); stroke-width: 10; }
+  .edge .pbore { fill: none; stroke: var(--bore); stroke-width: 6.6; }
+  .edge .pwater { fill: none; stroke: var(--c); stroke-width: 6.6; stroke-opacity: .32; }
+  .edge.on .pwater { stroke-opacity: .7; }
+  .edge .flg { stroke: var(--line); stroke-width: 3.4; }
+  .edge .arrow { fill: var(--ink); }
+  .elabel { font: 500 13px var(--body); fill: var(--muted); paint-order: stroke; stroke: var(--sheet); stroke-width: 5px; stroke-linejoin: round; transition: opacity .35s; }
   .particles { transition: opacity .35s; }
   .particles * { fill: var(--c); }
-  .stats .box { fill: var(--surface-2); stroke: var(--line); }
-  .stats .ttl { font-size: 15px; font-weight: 650; fill: var(--ink); }
-  .stats .num { font-size: 26px; font-weight: 700; fill: var(--ink); font-variant-numeric: tabular-nums; }
-  .stats .lbl { font-size: 13.5px; fill: var(--muted); }
-  .dim { opacity: .16 !important; }
+  .stats .blk { fill: var(--sheet); stroke: var(--line); stroke-width: 1.6; }
+  .stats line { stroke: var(--line); stroke-width: 1; }
+  .stats .ttl { font: 600 18px var(--disp); font-stretch: 86%; fill: var(--ink); }
+  .stats .id { font: 400 11.5px var(--mono); fill: var(--muted); text-anchor: end; }
+  .stats .num { font: 600 27px var(--disp); font-stretch: 88%; fill: var(--ink); font-variant-numeric: tabular-nums; }
+  .stats .lbl { font: 500 13px var(--body); fill: var(--muted); }
+  .dim { opacity: .17 !important; }
   .particles.dim { opacity: 0; }
 
-  /* presentation: diagram fills the screen, the step title moves to the header */
-  #caption { display: none; font-size: 22px; font-weight: 650; letter-spacing: -.01em; }
-  #caption small { display: block; font-size: 12px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+  /* presentation: drawing fills the screen, the step title moves to the header */
+  #caption { display: none; font: 600 28px/1.1 var(--disp); font-stretch: 88%; }
+  #caption small { display: block; font: 500 12px var(--mono); color: var(--muted); margin-bottom: 3px; }
   body.present { min-height: 100vh; }
   body.present header { padding-top: 12px; max-width: none; }
-  body.present header > div:first-child, body.present .legend { display: none; }
+  body.present header > div:first-child, body.present .legend, body.present #meter { display: none; }
   body.present #caption { display: block; }
   body.present main { grid-template-columns: minmax(0, 1fr); max-width: none; }
   body.present aside { display: none; }
-  body.present figure { border: 0; box-shadow: none; background: transparent; padding: 0; }
+  body.present figure { background: transparent; }
   body.present svg { max-height: calc(100vh - 80px); }
 
   @media (prefers-reduced-motion: reduce) {
     .particles { display: none; }
-    .edge { stroke-dasharray: 6 5; }
-    .pulse .badge circle { animation: none; }
+    .pulse .seal { animation: none; }
+    .lvl, #carriage { transition: none; }
   }
 </style>
 </head>
 <body>
 <header>
   <div>
-    <h1>Where does the water go? — the data pipeline</h1>
-    <p>Egypt Water Intelligence · one generated run (run-72b96af88a342375) flowing through streaming and batch paths, orchestrated by Dagster</p>
+    <div class="eyebrow">As-built drawing · Egypt Water Intelligence · run-72b96af88a342375</div>
+    <h1>Where does the water go?</h1>
   </div>
   <div id="caption"></div>
   <div class="controls">
@@ -164,29 +193,36 @@
     </div>
     <button id="auto" aria-pressed="false">Auto tour</button>
     <button id="flow" aria-pressed="true">Flow on</button>
-    <button id="theme">Theme</button>
+    <button id="theme">Sheet</button>
     <button id="full">Present</button>
   </div>
 </header>
 
+<div id="meter" aria-live="off"><span>Since you opened this drawing, Egypt has lost about</span> <b id="lost">0</b> <span>half-litre bottles of treated water.</span></div>
+
 <div class="legend" aria-hidden="true">
   <span><i style="background:var(--stream)"></i><b>Streaming</b> events</span>
-  <span><i class="sq" style="background:var(--batch)"></i><b>Batch</b> files</span>
+  <span><i class="sq" style="background-color:var(--batch)"></i><b>Batch</b> files</span>
   <span><i style="background:var(--live)"></i><b>Live</b> board</span>
-  <span><i class="sq" style="background:var(--serve)"></i><b>Serving</b> tables</span>
+  <span><i class="sq" style="background-color:var(--serve)"></i><b>Serving</b> tables</span>
   <span><i style="background:var(--eval)"></i><b>Evaluation</b> only</span>
   <span><i style="background:var(--upload)"></i><b>Upload</b> of files</span>
-  <span><i style="background:var(--ink)"></i><b>D</b> = verified by a Dagster asset</span>
+  <span>Orange hex nut = verified by a Dagster asset</span>
 </div>
 
 <main>
   <figure>
-    <svg id="dia" viewBox="0 0 1860 940" role="img" aria-labelledby="diaTitle diaDesc">
+    <svg id="dia" viewBox="-34 -34 1928 1008" role="img" aria-labelledby="diaTitle diaDesc">
       <title id="diaTitle">Pipeline diagram</title>
       <desc id="diaDesc">The generator publishes to Kafka. The archiver copies Kafka into MinIO, where Spark builds the batch tables in Iceberg.
         Four Flink jobs detect incidents from the district stream; their results go to a live Grafana board and, through a bounded Spark load, into Iceberg.
         Trino builds marts on Iceberg for Power BI. The answer key is used only by the evaluation. Dagster orchestrates and verifies every step.</desc>
-      <defs id="defs"></defs>
+      <defs id="defs">
+        <pattern id="gridS" width="20" height="20" patternUnits="userSpaceOnUse"><path d="M20 0H0V20" fill="none" stroke="var(--faint)" stroke-width="1"/></pattern>
+        <pattern id="gridL" width="100" height="100" patternUnits="userSpaceOnUse"><rect width="100" height="100" fill="url(#gridS)"/><path d="M100 0H0V100" fill="none" stroke="var(--faint-2)" stroke-width="1"/></pattern>
+      </defs>
+      <rect x="-34" y="-34" width="1928" height="1008" fill="url(#gridL)"/>
+      <g id="sheet"></g>
       <g id="edges"></g>
       <g id="parts"></g>
       <g id="nodes"></g>
@@ -199,7 +235,7 @@
     <div id="pBody"></div>
     <dl id="pFacts"></dl>
     <div class="proof" id="pProof"></div>
-    <div class="hint">Click any component for details. <kbd>←</kbd> <kbd>→</kbd> step through the tour,
+    <div class="hint">Click any part of the drawing for details. <kbd>←</kbd> <kbd>→</kbd> step through the tour,
       <kbd>Space</kbd> pause the flow, <kbd>F</kbd> present (fullscreen), <kbd>Esc</kbd> back to the overview.</div>
   </aside>
 </main>
@@ -378,12 +414,7 @@
   // ---------------------------------------------------------------- render
   const svg = document.getElementById("dia");
   const gEdges = document.getElementById("edges"), gParts = document.getElementById("parts"), gNodes = document.getElementById("nodes");
-  const defs = document.getElementById("defs");
-
-  for (const kind of Object.keys(FLOW)) {
-    const m = el("marker", { id: `arr-${kind}`, viewBox: "0 0 10 10", refX: 9, refY: 5, markerWidth: 7, markerHeight: 7, orient: "auto-start-reverse", class: `k-${kind}` }, defs);
-    el("path", { d: "M0 0 L10 5 L0 10 z", style: "fill: var(--c)" }, m);
-  }
+  const defs = document.getElementById("defs"), gSheet = document.getElementById("sheet");
 
   const text = (parent, x, y, str, cls) => {
     const mono = str.startsWith("`");
@@ -392,32 +423,153 @@
     return t;
   };
 
+  // drawing sheet: border, zone marks, the note every drawing carries
+  el("rect", { class: "frame", x: -22, y: -22, width: 1904, height: 984 }, gSheet);
+  for (let i = 0; i < 8; i++) {
+    const x = 216 + i * 238;
+    if (i < 7) for (const y of [-22, 962]) el("line", { class: "zt", x1: x, x2: x, y1: y - 6, y2: y + 6 }, gSheet);
+    for (const y of [-26, 971]) text(gSheet, x - 119, y, String(8 - i), "zone");
+  }
+  "ABCDEF".split("").forEach((c, i) => {
+    const y = 142 + i * 164;
+    if (i < 5) for (const x of [-22, 1882]) el("line", { class: "zt", x1: x - 6, x2: x + 6, y1: y, y2: y }, gSheet);
+    for (const x of [-28, 1888]) text(gSheet, x, y - 78, c, "zone");
+  });
+  text(gSheet, 1864, 948, "All values simulated · not to scale", "note").setAttribute("text-anchor", "end");
+
+  const WAVE = 60, waves = [], spins = [], needles = [], drips = [];
+  const rr = ({ x, y, w, h }, r) => `M${x + r} ${y}H${x + w - r}Q${x + w} ${y} ${x + w} ${y + r}V${y + h - r}Q${x + w} ${y + h} ${x + w - r} ${y + h}H${x + r}Q${x} ${y + h} ${x} ${y + h - r}V${y + r}Q${x} ${y} ${x + r} ${y}Z`;
+  let clipN = 0;
+  function water(g, clipD, { x, y, w, h }, level) {
+    const id = `clip${clipN++}`;
+    el("path", { d: clipD }, el("clipPath", { id }, defs));
+    const surf = y + h * (1 - level);
+    const lvl = el("g", { class: "lvl", style: `--dry:${Math.ceil(y + h + 8 - surf)}px` }, el("g", { "clip-path": `url(#${id})` }, g));
+    let top = `M${x - WAVE} 0`;
+    for (let i = 0; i * WAVE < w + 2 * WAVE; i++) top += " q15 -5 30 0 q15 5 30 0";
+    const wave = el("g", { transform: `translate(0 ${surf})` }, lvl);
+    el("path", { class: "wfill", d: `${top} V${h + 12} H${x - WAVE} Z` }, wave);
+    el("path", { class: "wtop", d: top }, wave);
+    waves.push({ wave, surf });
+  }
+  const seal = (g, x, y) => {
+    const s = el("g", { class: "seal", transform: `translate(${x} ${y})` }, g);
+    el("polygon", { points: [0, 1, 2, 3, 4, 5].map((i) => { const a = Math.PI / 3 * i + Math.PI / 6; return `${(12 * Math.cos(a)).toFixed(1)},${(12 * Math.sin(a)).toFixed(1)}`; }).join(" ") }, s);
+    el("text", { y: 4.5 }, s).textContent = "D";
+  };
+
+  // every stage is a part of a water network; the vessel's shape says what the stage does to the water
+  const SHAPE = { gen: "pump", kafka: "manifold", flink: "train", derived: "tank", bridge: "spool", grafana: "gauge", sparkload: "spool",
+    archiver: "spool", archive: "basin", sparkbatch: "spool", iceberg: "berg", trino: "spool", powerbi: "tap", waterraw: "basin", restricted: "vault", evaluation: "spool" };
+  const LEVEL = { derived: .3, flink: .2, archive: .17, waterraw: .28, restricted: .26, iceberg: .87 };
+
   const nodeEls = {};
+  let carriage, plumb;
   for (const n of NODES) {
-    const g = el("g", { class: `node k-${n.kind}`, "data-id": n.id, tabindex: 0, role: "button", "aria-label": INFO[n.id].title }, gNodes);
+    const g = el("g", { class: `node k-${n.kind}`, "data-id": n.id, tabindex: 0, role: "button", "aria-label": INFO[n.id].title, style: `--lag:${(n.x / 1860 * 1.4).toFixed(2)}s` }, gNodes);
     nodeEls[n.id] = g;
-    el("rect", { class: "box", x: n.x, y: n.y, width: n.w, height: n.h, rx: 12 }, g);
-    if (n.inline) {
-      text(g, n.x + 22, n.y + 36, n.title, "ttl").style.fontSize = "17px";
-      text(g, n.x + 110, n.y + 35, n.line, "ln");
-      const b = el("g", { class: "badge", transform: `translate(${n.x + n.w - 300} ${n.y + 31})` }, g);
-      el("circle", { r: 9 }, b); el("text", { y: 4 }, b).textContent = "D";
-      text(g, n.x + n.w - 284, n.y + 35, "= step verified by a Dagster asset", "ln");
+    if (n.inline) { // Dagster: the inspection gantry that runs the length of the works
+      el("rect", { class: "ves", x: n.x, y: n.y, width: n.w, height: n.h }, g);
+      el("line", { class: "rail", x1: n.x, x2: n.x + n.w, y1: n.y + 2, y2: n.y + 2 }, g);
+      el("line", { class: "rail", x1: n.x, x2: n.x + n.w, y1: n.y + n.h - 8, y2: n.y + n.h - 8 }, g);
+      for (let x = n.x; x <= n.x + n.w; x += 30) el("line", { class: "tick", x1: x, x2: x, y1: n.y + n.h - 8, y2: n.y + n.h - (x % 150 === 30 ? 0 : 3) }, g);
+      text(g, n.x, n.y + 33, n.title, "ttl").style.fontSize = "23px";
+      text(g, n.x + 100, n.y + 32, n.line, "ln");
+      seal(g, n.x + n.w - 290, n.y + 26);
+      text(g, n.x + n.w - 272, n.y + 32, "= step verified by a Dagster asset", "ln");
+      plumb = el("line", { id: "plumb", x1: 0, x2: 0, y1: n.y + n.h, y2: 958, opacity: 0 }, gParts);
+      carriage = el("g", { id: "carriage" }, g);
+      el("polygon", { points: `-9,${n.y + n.h - 10} 9,${n.y + n.h - 10} 0,${n.y + n.h + 4}` }, carriage);
       continue;
     }
-    el("rect", { class: "accent", x: n.x, y: n.y + 14, width: 4, height: n.h - 28, rx: 2 }, g);
-    text(g, n.x + 18, n.y + 28, n.title, "ttl");
+    const shape = SHAPE[n.id];
+    const box = { x: n.x, y: n.y, w: n.w, h: n.h };
+    let vd = rr(box, 8), wall = vd, dy = 0, lx = 18;
+    if (shape === "spool") { // a flanged length of pipe
+      Object.assign(box, { x: n.x + 8, w: n.w - 16, y: n.y + 5, h: n.h - 10 }); vd = wall = rr(box, 5); lx = 22;
+      for (const x of [n.x, n.x + n.w - 8]) el("rect", { class: "part", x, y: n.y, width: 8, height: n.h }, g);
+    } else if (shape === "tank") { // a vertical storage tank
+      const { x, y, w, h } = box, e = 15;
+      vd = wall = `M${x} ${y + e}A${w / 2} ${e} 0 0 1 ${x + w} ${y + e}V${y + h - e}A${w / 2} ${e} 0 0 1 ${x} ${y + h - e}Z`; dy = 10;
+    } else if (shape === "basin") { // an open settling basin, no lid
+      const { x, y, w, h } = box;
+      vd = `M${x} ${y}H${x + w}V${y + h}H${x}Z`;
+      wall = `M${x - 7} ${y}H${x}V${y + h - 10}Q${x} ${y + h} ${x + 10} ${y + h}H${x + w - 10}Q${x + w} ${y + h} ${x + w} ${y + h - 10}V${y}H${x + w + 7}`;
+    } else if (shape === "vault") { // the answer key sits behind a bolted door
+      const { x, y, w, h } = box, c = 15;
+      vd = wall = `M${x + c} ${y}H${x + w - c}L${x + w} ${y + c}V${y + h - c}L${x + w - c} ${y + h}H${x + c}L${x} ${y + h - c}V${y + c}Z`;
+    } else if (shape === "berg") {
+      const { x, y, w, h } = box;
+      vd = `M${x} ${y}H${x + w}V${y + h}H${x}Z`;
+      wall = `M${x} ${y}V${y + h - 12}Q${x} ${y + h} ${x + 12} ${y + h}H${x + w - 12}Q${x + w} ${y + h} ${x + w} ${y + h - 12}V${y}`;
+    }
+    el("path", { class: "ves", d: vd }, g);
+    if (n.jobs) { // Flink: four chambers, each spilling into the next one a little lower
+      n.jobs.forEach((_, i) => {
+        const b = { x: n.x + 14 + i * 120, y: n.y + 64, w: 106, h: 92 };
+        water(g, rr(b, 3), b, .2 - i * .03);
+      });
+    } else water(g, vd, box, LEVEL[n.id] ?? .15);
+    if (shape === "berg") {
+      const { x, y, w } = box, s = y + 39;
+      el("path", { class: "berg", d: `M${x + 6} ${s}H${x + w - 6}L${x + w - 14} ${s + 80}L${x + w - 4} ${s + 170}L${x + w - 32} ${y + 268}L${x + 60} ${y + 300}L${x + 16} ${y + 240}L${x + 4} ${s + 90}Z` }, g);
+      el("path", { class: "tip", d: `M${x + w - 44} ${s}L${x + w - 38} ${y + 8}L${x + w - 31} ${y - 24}L${x + w - 22} ${y - 8}L${x + w - 15} ${y + 12}L${x + w - 7} ${s}Z` }, g);
+    }
+    el("path", { class: "wall", d: wall }, g);
+
+    if (shape === "manifold") { // Kafka: a header with one nozzle for each thing that draws from it
+      el("rect", { class: "part", x: n.x + n.w, y: 390, width: 7, height: 20 }, g);
+      el("rect", { class: "part", x: n.x - 7, y: 425, width: 7, height: 20 }, g);
+      el("rect", { class: "part", x: 350, y: n.y + n.h, width: 20, height: 7 }, g);
+    }
+    if (shape === "vault") {
+      const { x, y, w, h } = box;
+      for (const [bx, by] of [[x + 9, y + 26], [x + w - 9, y + 26], [x + 9, y + h - 26], [x + w - 9, y + h - 26]]) el("circle", { class: "bolt", cx: bx, cy: by, r: 2.6 }, g);
+      el("rect", { class: "part", x: x + w - 44, y: y + 22, width: 20, height: 15, rx: 2 }, g);
+      el("path", { class: "thin", d: `M${x + w - 40} ${y + 22}v-5a6 6 0 0 1 12 0v5` }, g);
+    }
+    if (shape === "pump") { // the source: an impeller that never stops
+      const imp = el("g", {}, g);
+      const cx = n.x + n.w - 58, cy = n.y + 24;
+      el("circle", { class: "thin", cx, cy, r: 15 }, g);
+      for (let i = 0; i < 4; i++) { const a = i * Math.PI / 2; el("path", { class: "thin", d: `M0 0Q${(11 * Math.cos(a + .9)).toFixed(1)} ${(11 * Math.sin(a + .9)).toFixed(1)} ${(13 * Math.cos(a)).toFixed(1)} ${(13 * Math.sin(a)).toFixed(1)}` }, imp); }
+      spins.push({ imp, cx, cy });
+    }
+    if (shape === "gauge") { // a pressure gauge on the live board's line
+      const cx = n.x + n.w / 2, cy = n.y, r = 33;
+      el("path", { class: "ves", d: `M${cx - r} ${cy}A${r} ${r} 0 0 1 ${cx + r} ${cy}Z` }, g);
+      el("path", { class: "wall", d: `M${cx - r} ${cy}A${r} ${r} 0 0 1 ${cx + r} ${cy}` }, g);
+      for (let i = 0; i <= 8; i++) {
+        const a = Math.PI * (1 - i / 8);
+        el("line", { class: "tick", x1: cx + (r - 3) * Math.cos(a), y1: cy - (r - 3) * Math.sin(a), x2: cx + (r - (i % 4 ? 7 : 11)) * Math.cos(a), y2: cy - (r - (i % 4 ? 7 : 11)) * Math.sin(a) }, g);
+      }
+      needles.push({ line: el("line", { class: "needle", x1: 0, y1: 0, x2: 0, y2: 0 }, g), cx, cy, r: r - 9 });
+    }
+    if (shape === "tap") { // the end of the line: the point the water is trying to reach
+      const cx = n.x + n.w / 2, y = n.y + n.h;
+      el("path", { class: "ves", d: `M${cx - 9} ${y}V${y + 26}H${cx - 42}Q${cx - 56} ${y + 26} ${cx - 56} ${y + 40}V${y + 56}H${cx - 36}V${y + 46}H${cx + 9}V${y}Z` }, g);
+      el("path", { class: "wall", d: `M${cx - 9} ${y}V${y + 26}H${cx - 42}Q${cx - 56} ${y + 26} ${cx - 56} ${y + 40}V${y + 56}H${cx - 36}V${y + 46}H${cx + 9}V${y}` }, g);
+      el("rect", { class: "part", x: cx - 26, y: y + 14, width: 52, height: 5 }, g);
+      el("rect", { class: "part", x: cx - 3, y: y + 19, width: 6, height: 7 }, g);
+      el("rect", { class: "part", x: cx - 60, y: y + 56, width: 28, height: 5 }, g);
+      drips.push({ drop: el("ellipse", { class: "drip", cx: cx - 46, cy: y + 66, rx: 4, ry: 5 }, g), y0: y + 66, y1: y + 150 });
+      text(g, cx - 2, y + 182, "a tap, at last", "taplabel");
+    }
+    if (shape === "basin") for (const [dx, sign] of [[n.x - 7, 0], [n.x + n.w + 7, 0]]) el("line", { class: "wall", x1: dx, x2: dx, y1: n.y - 5, y2: n.y + 5 }, g);
+
+    const lineX = n.x + lx;
+    text(g, lineX, n.y + 28 + dy + (shape === "spool" ? 2 : 0), n.title, "ttl");
     (n.lines || []).forEach((line, i) => {
-      const y = n.y + 54 + i * 21;
+      const y = n.y + 54 + dy + i * 21;
       if (Array.isArray(line)) {
-        text(g, n.x + 18, y, line[0], "ln");
+        text(g, lineX, y, line[0], "ln");
         text(g, n.x + n.w - 16, y, line[1], "val");
-      } else text(g, n.x + 18, y, line, "ln");
+      } else text(g, lineX, y, line, "ln");
     });
     if (n.jobs) n.jobs.forEach(([name, a, b], i) => {
       const x = n.x + 14 + i * 120, y = n.y + 64;
       const s = el("g", { class: "sub" }, g);
-      el("rect", { class: "box", x, y, width: 106, height: 92, rx: 9 }, s);
+      el("path", { class: "thin", d: `M${x} ${y}V${y + 92}H${x + 106}V${y + (i < 3 ? 34 : 0)}` }, s); // the low right wall is the weir
       text(s, x + 10, y + 24, name, "ttl");
       text(s, x + 10, y + 50, a, "ln");
       text(s, x + 10, y + 70, b, "ln");
@@ -425,56 +577,73 @@
     if (n.footer && !n.pills) text(g, n.x + 18, n.y + n.h - 26, n.footer, "ln");
     if (n.pills) {
       n.pills.forEach(([name, sub, kind], i) => {
-        const y = n.y + 46 + i * 40;
+        const y = n.y + 52 + i * 38;
         const p = el("g", { class: "pill", style: `--pc: var(--${kind})` }, g);
-        el("rect", { x: n.x + 16, y, width: n.w - 32, height: 32, rx: 8 }, p);
-        text(p, n.x + 28, y + 21, name, "ttl");
-        const s = text(p, n.x + n.w - 26, y + 20, sub, "ln"); s.setAttribute("text-anchor", "end");
+        el("rect", { x: n.x + 16, y, width: n.w - 32, height: 31 }, p);
+        text(p, n.x + 26, y + 21, name, "ttl");
+        const s = text(p, n.x + n.w - 24, y + 20, sub, "ln"); s.setAttribute("text-anchor", "end");
       });
-      n.footer.forEach((f, i) => text(g, n.x + 18, n.y + n.h - 40 + i * 20, f, "ln").style.fontSize = "13px");
+      n.footer.forEach((f, i) => text(g, n.x + 18, n.y + n.h - 28 + i * 18, f, "ln").style.fontSize = "13px");
     }
-    if (n.asset) {
-      const b = el("g", { class: "badge", transform: `translate(${n.x + n.w - 18} ${n.y + 23})` }, g);
-      el("circle", { r: 10 }, b); el("text", { y: 4 }, b).textContent = "D";
-    }
+    if (n.asset) seal(g, n.x + n.w - 22, n.y + 22 + (shape === "spool" ? 2 : 0));
   }
 
-  // stats card (not interactive)
+  // the drawing's title block (not interactive)
   const stats = el("g", { class: "stats" }, gNodes);
-  el("rect", { class: "box", x: 510, y: 380, width: 490, height: 165, rx: 12 }, stats);
-  text(stats, 528, 410, "This run, verified end to end", "ttl");
+  el("rect", { class: "blk", x: 510, y: 380, width: 490, height: 165 }, stats);
+  el("line", { x1: 510, x2: 1000, y1: 416, y2: 416 }, stats);
+  el("line", { x1: 510, x2: 1000, y1: 480, y2: 480 }, stats);
+  for (const x of [673, 837]) el("line", { x1: x, x2: x, y1: 416, y2: 545 }, stats);
+  text(stats, 524, 405, "This run, verified end to end", "ttl");
+  text(stats, 988, 404, "sheet 1 of 1", "id");
   [["216,071", "district messages"], ["3,600,454", "meter messages"], ["723 files", "archived · 0 gaps"],
    ["12 / 12", "planted incidents found"], ["108 / 108", "null faults flagged"], ["4.2 min", "idempotent re-run"]]
     .forEach(([num, lbl], i) => {
-      const x = 528 + (i % 3) * 160, y = 452 + Math.floor(i / 3) * 62;
-      text(stats, x, y, num, "num"); text(stats, x, y + 20, lbl, "lbl");
+      const x = 524 + (i % 3) * 164, y = 447 + Math.floor(i / 3) * 64;
+      text(stats, x, y, num, "num"); text(stats, x, y + 21, lbl, "lbl");
     });
 
   const edgeEls = {}, flows = [];
   for (const e of EDGES) {
-    const p = el("path", { class: `edge k-${e.kind}`, d: e.d, "marker-end": `url(#arr-${e.kind})` }, gEdges);
+    const g = el("g", { class: `edge k-${e.kind}` }, gEdges);
+    el("path", { class: "pwall", d: e.d }, g);
+    el("path", { class: "pbore", d: e.d }, g);
+    const p = el("path", { class: "pwater", d: e.d }, g);
     const label = e.label ? text(gEdges, e.label[1], e.label[2], e.label[0], "elabel") : null;
     if (label && e.label[1] > 900) label.setAttribute("text-anchor", "middle");
     const [speed, spacing, shape] = FLOW[e.kind];
     const len = p.getTotalLength();
+    // pipe joints at both ends, and a flow arrow on any run long enough to carry one
+    for (const d of len > 40 ? [3, len - 3] : []) {
+      const a = p.getPointAtLength(d - 1), b = p.getPointAtLength(d + 1), ang = Math.atan2(b.y - a.y, b.x - a.x) + Math.PI / 2;
+      el("line", { class: "flg", x1: b.x + 8 * Math.cos(ang), y1: b.y + 8 * Math.sin(ang), x2: b.x - 8 * Math.cos(ang), y2: b.y - 8 * Math.sin(ang) }, g);
+    }
+    if (len > 90) {
+      const a = p.getPointAtLength(len * .5 - 1), b = p.getPointAtLength(len * .5 + 1), deg = Math.atan2(b.y - a.y, b.x - a.x) * 180 / Math.PI;
+      el("path", { class: "arrow", d: "M-7 -8L7 0L-7 8Z", transform: `translate(${b.x} ${b.y}) rotate(${deg})` }, g);
+    }
     const count = Math.max(1, Math.round(len / spacing));
     const pg = el("g", { class: `particles k-${e.kind}` }, gParts);
     const items = [];
     for (let i = 0; i < count; i++) {
-      items.push(shape === "sq" ? el("rect", { x: -4, y: -4, width: 8, height: 8, rx: 2 }, pg) : el("circle", { r: 3.4 }, pg));
+      items.push(shape === "sq" ? el("rect", { x: -4, y: -2.6, width: 8, height: 5.2 }, pg) : el("circle", { r: 2.8 }, pg));
     }
-    edgeEls[e.id] = { path: p, label, pg };
+    edgeEls[e.id] = { path: g, label, pg };
     flows.push({ path: p, len, speed, items, pg });
   }
 
   // ---------------------------------------------------------------- animation
-  let playing = !matchMedia("(prefers-reduced-motion: reduce)").matches, t = 0, last = null;
-  const flowBtn = document.getElementById("flow");
+  // everything that moves is a function of t with a 4 s period, so #loop=4 exports a seamless GIF
+  const BOTTLES_PER_S = 190000;
+  let playing = !matchMedia("(prefers-reduced-motion: reduce)").matches, t = 0, last = null, frozen = false;
+  const flowBtn = document.getElementById("flow"), lost = document.getElementById("lost"), opened = performance.now();
   const setPlaying = (on) => { playing = on; flowBtn.setAttribute("aria-pressed", on); flowBtn.textContent = on ? "Flow on" : "Flow off"; };
   setPlaying(playing);
   function frame(ts) {
     if (last !== null && playing) t += Math.min(0.1, (ts - last) / 1000);
     last = ts;
+    const sec = frozen ? 412.6 + t : (ts - opened) / 1000;
+    lost.textContent = Math.round(sec * BOTTLES_PER_S).toLocaleString("en-US");
     for (const f of flows) {
       if (f.pg.classList.contains("dim")) continue;
       const n = f.items.length;
@@ -485,12 +654,31 @@
         item.setAttribute("opacity", Math.min(1, d / 14, (f.len - d) / 14).toFixed(2));
       });
     }
+    const dx = -((t * WAVE / 4) % WAVE);
+    for (const w of waves) w.wave.setAttribute("transform", `translate(${dx.toFixed(1)} ${w.surf})`);
+    for (const s of spins) s.imp.setAttribute("transform", `translate(${s.cx} ${s.cy}) rotate(${(t * 90).toFixed(1)})`);
+    for (const nd of needles) {
+      const a = Math.PI * (.5 + .1 * Math.sin(t * Math.PI / 2) + .04 * Math.sin(t * Math.PI * 2));
+      nd.line.setAttribute("x1", nd.cx); nd.line.setAttribute("y1", nd.cy);
+      nd.line.setAttribute("x2", (nd.cx + nd.r * Math.cos(a)).toFixed(1)); nd.line.setAttribute("y2", (nd.cy - nd.r * Math.sin(a)).toFixed(1));
+    }
+    for (const d of drips) {
+      const u = (t % 2) / 2, fall = Math.max(0, (u - .45) / .55);
+      d.drop.setAttribute("cy", (d.y0 + (d.y1 - d.y0) * fall * fall).toFixed(1));
+      d.drop.setAttribute("ry", (1.6 + Math.min(u * 7, 3.6)).toFixed(1));
+      d.drop.setAttribute("opacity", (fall > .94 ? 0 : 1));
+    }
     requestAnimationFrame(frame);
   }
   requestAnimationFrame(frame);
 
   // ---------------------------------------------------------------- focus and panel
   const $ = (id) => document.getElementById(id);
+  const moveCarriage = (x) => {
+    carriage.style.transform = `translateX(${x ?? 930}px)`;
+    plumb.setAttribute("x1", x ?? 930); plumb.setAttribute("x2", x ?? 930);
+    plumb.setAttribute("opacity", x == null ? 0 : .8);
+  };
   function focus(nodes, edges, selected, pulse) {
     for (const [id, g] of Object.entries(nodeEls)) {
       g.classList.toggle("dim", nodes !== null && !nodes.includes(id));
@@ -503,6 +691,8 @@
       e.path.classList.toggle("on", edges !== null && !off);
     }
     gNodes.classList.toggle("pulse", !!pulse);
+    const on = nodes && NODES.filter((n) => nodes.includes(n.id) && !n.inline);
+    moveCarriage(on && on.length ? Math.round(on.reduce((s, n) => s + n.x + n.w / 2, 0) / on.length) : null);
   }
   function panel({ kicker, title, body = [], facts = [], proof = "" }) {
     $("pKicker").textContent = kicker; $("pTitle").textContent = title;
@@ -516,11 +706,19 @@
     }
   }
 
+  // the tour floods the works: a vessel stays dry until the tour has reached it
+  function flood(upTo) {
+    const wet = new Set();
+    for (let i = 1; i <= upTo; i++) (STEPS[i].nodes || NODES.map((n) => n.id)).forEach((id) => wet.add(id));
+    for (const [id, g] of Object.entries(nodeEls)) g.classList.toggle("dry", upTo > 0 && !wet.has(id));
+  }
+
   let step = 0;
   function showStep(i) {
     step = (i + STEPS.length) % STEPS.length;
     const s = STEPS[step];
     focus(s.nodes, s.edges, null, s.pulse);
+    flood(step);
     const info = s.info ? INFO[s.info] : {};
     panel({ ...info, kicker: step ? `Step ${step} of ${STEPS.length - 1}` : "Overview", title: s.title, body: s.body || info.body });
     $("stepLabel").textContent = step ? `Step ${step} / ${STEPS.length - 1}` : "Overview";
@@ -567,8 +765,7 @@
   const root = document.documentElement;
   try { const saved = localStorage.getItem("ewi-theme"); if (saved) root.dataset.theme = saved; } catch (e) {}
   $("theme").addEventListener("click", () => {
-    const dark = root.dataset.theme ? root.dataset.theme === "dark" : matchMedia("(prefers-color-scheme: dark)").matches;
-    root.dataset.theme = dark ? "light" : "dark";
+    root.dataset.theme = root.dataset.theme === "light" ? "dark" : "light";
     try { localStorage.setItem("ewi-theme", root.dataset.theme); } catch (e) {}
   });
 
@@ -591,9 +788,17 @@
     const gap = f.len / f.items.length;
     f.speed = Math.max(1, Math.round((f.speed * loop) / gap)) * gap / loop;
   }
-  if (hash.has("t")) { t = parseFloat(hash.get("t")) || 0; setPlaying(false); }
+  if (hash.has("t")) { t = parseFloat(hash.get("t")) || 0; frozen = true; setPlaying(false); }
   if (hash.has("theme")) root.dataset.theme = hash.get("theme");
   showStep(parseInt(hash.get("step"), 10) || 0);
+
+  // on load the works start dry and water runs from the pump to the tap, left to right
+  if (!hash.has("t") && !hash.has("step") && !matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    document.body.classList.add("intro");
+    for (const g of Object.values(nodeEls)) g.classList.add("dry");
+    requestAnimationFrame(() => requestAnimationFrame(() => { for (const g of Object.values(nodeEls)) g.classList.remove("dry"); }));
+    setTimeout(() => document.body.classList.remove("intro"), 3500);
+  }
 })();
 </script>
 </body>

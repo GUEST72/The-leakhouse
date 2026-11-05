@@ -17,3 +17,11 @@ orchestration/.dagster_home/
 /dashboards/
 infrastructure/grafana/build_dashboard.py
 infrastructure/grafana/dashboards/
+
+# Personal and presentation material lives outside the repo (../the-leakhouse-materials)
+/*.pptx
+/*.pdf
+/*.tex
+/*.docx
+/presentation-*
+~$*

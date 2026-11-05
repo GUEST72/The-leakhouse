@@ -13,7 +13,7 @@ Your work is to turn generated measurements into cleaned data, dimensions, facts
 | `Generator/schemas/` | Read `meter-reading.v1.json` and `district-sensor.v1.json` for the actual event fields. |
 | [Batch requirements](guides/batch-processing.md) | Follow the detailed cleaning, table-grain and water-balance requirements. |
 
-Amr Yousri handles Airflow and shared infrastructure; Ahmed handles Flink. Integrate with Airflow after your standalone jobs pass.
+Ahmed handles Flink. Integrate with Airflow after your standalone jobs pass.
 
 ## 2. Start only what you need
 
@@ -118,7 +118,7 @@ docker compose exec -T trino trino --execute "SHOW TABLES FROM water.analytics"
 
 The validator reads every table through Spark, compares its row count through Trino, and prints a final JSON report with counts and content checksums. Run the build and validator again and compare those summaries to check rerun stability. Also query a few known intervals through Trino. A successful build exit alone is not enough. Extend the validator alongside any new tables or business rules.
 
-Hand over the code, table schemas/grains, exact test and SQL commands, run ID, and a short quality report with counts and sample calculations. Then coordinate with Amr Yousri to register your job in `runtime.spark_batch()`, the DAG's `batch_job` enum and `runtime.verify_trino()`.
+Hand over the code, table schemas/grains, exact test and SQL commands, run ID, and a short quality report with counts and sample calculations. Then register your job in `runtime.spark_batch()`, the DAG's `batch_job` enum and `runtime.verify_trino()`.
 
 ## 6. Only if no generated data is uploaded yet
 

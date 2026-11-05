@@ -1,6 +1,6 @@
 # What changed and why
 
-Prepared for Amr Yousri and the SIC Team 4 project. This records the work completed in this session through **26 October 2026**. It describes the code in this checkout and the checks actually performed. For operating instructions, read the [complete usage guide](USER_GUIDE.md).
+Prepared for the SIC Team 4 project. This records the work completed in this session through **26 October 2026**. It describes the code in this checkout and the checks actually performed. For operating instructions, read the [complete usage guide](USER_GUIDE.md).
 
 ## Contents
 
@@ -46,7 +46,6 @@ The diagram shows the implemented integration. The current Spark entrypoint prod
 
 | Owner | Responsibility | What this work provides |
 | --- | --- | --- |
-| Amr Yousri | Airflow orchestration and shared Docker infrastructure | Reproducible services, task ordering, runtime helpers, retry guards, monitoring and runbooks |
 | Amr AbdEl-Monem | PySpark transformations and analytical Iceberg tables | A container runtime, shared catalog, exact raw paths, a smoke job and extension instructions |
 | Ahmed Sayed | Flink rules and streaming integration | Existing jobs are submitted and checked by Airflow; their detection logic was retained |
 | Generator/data owner | Synthetic source generation and delivery | Existing simulation is reused with a small smoke configuration and a generation wrapper |
